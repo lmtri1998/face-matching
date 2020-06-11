@@ -165,24 +165,25 @@ i = 1
 for train_idx, valid_idx in cv.split(X):
     # svclassifier = SVC(kernel='linear', random_state=123, probability=True)
     X_train, X_test, y_train, y_test = X[train_idx], X[valid_idx], y[train_idx], y[valid_idx]
-
+    # import pdb; pdb.set_trace()
     clf = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(16, 32), random_state=1)
 
     clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    # # svclassifier.fit(X_train, y_train)
-    # # y_pred = svclassifier.predict(X_test)
-    # #print(y_pred)
-    # with open(args.folder + 'fold_' + str(i) + '_' + args.models_out, 'rb') as f:
-    #     model = pickle.load(f)
+    y_pred = clf.predict_proba(X_test)
+    y_labels = np.where(y_pred[:, 1] > 0.5, 1, 0)
+    # svclassifier.fit(X_train, y_train)
+    # y_pred = svclassifier.predict(X_test)
+    #print(y_pred)
+    with open(args.folder + 'fold_' + str(i) + '_' + args.models_out, 'rb') as f:
+        model = pickle.load(f)
     with open(args.folder + 'fold_' + str(i) + '_' + args.models_out, 'wb') as f:
         pickle.dump(clf, f)
     i += 1
     # y_pred = model.predict(X_test)
     from sklearn.metrics import classification_report, confusion_matrix
-    report = confusion_matrix(y_test,y_pred)
+    report = confusion_matrix(y_test,y_labels)
     print(report)
-    print(classification_report(y_test,y_pred))
+    print(classification_report(y_test,y_labels))
 
     TP = report[0][0]
     FP = report[1][0]

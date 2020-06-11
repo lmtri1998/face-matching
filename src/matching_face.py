@@ -17,8 +17,7 @@ import cv2
 import os
 from glob import glob
 import re
-import base64
-import io
+import time
 
 ap = argparse.ArgumentParser()
 
@@ -76,25 +75,23 @@ def get_bbox_and_landmarks(image):
     
 def face_embedding(image, bbox, landmarkss):
     # Return embedding
-    if(len(bbox) == 0):
-        return bbox
     embedding =  extract_feature(image.copy(), bbox[0],landmarkss[0])
     return embedding
 
 def predict_matching(id_image, selfie_image):
-    img_id = cv2.imread(id_image)
-    img_selfie = cv2.imread(selfie_image)
-    id_bbox, id_landmark = get_bbox_and_landmarks(img_id)
-    selfie_bbox, selfie_landmark = get_bbox_and_landmarks(img_selfie)
-    embedding_id = face_embedding(img_id, id_bbox, id_landmark)
-    embedding_selfie = face_embedding(img_selfie,  selfie_bbox, selfie_landmark)
-    if(len(embedding_id) == 0 or len(embedding_selfie) == 0):
-        return -1
+    start_time = time.time()
+    id_bbox, id_landmark = get_bbox_and_landmarks(id_image)
+    selfie_bbox, selfie_landmark = get_bbox_and_landmarks(selfie_image)
+    embedding_id = face_embedding(id_image, id_bbox, id_landmark)
+    embedding_selfie = face_embedding(selfie_image,  selfie_bbox, selfie_landmark)
     distain_vec = norm_vec(embedding_id, embedding_selfie)
 
-    #predict
-    result = model.predict([distain_vec])
-    return result[0]
+    # predict
+    result = model.predict_proba([distain_vec])
+    total_time = time.time() - start_time
+    return result[0], id_bbox, selfie_bbox, embedding_id, embedding_selfie, total_time
 
-res = predict_matching(args.id_image, args.selfie_image)
-print(res)
+# id_img = cv2.imread(args.id_image)
+# selfie_img = cv2.imread(args.selfie_image)
+# res = predict_matching(id_img, selfie_img)
+# print(res)
